@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "5nZGt0gJlseYQNnUwPaNBCnvGaVUv2RCy2CASRDnqjG+75WDVAxxkpdEAHWhsDnmz3Zi37OqXxGOQesxRRQ0hg==",
+  "success": true,
+  "projectFilePath": "C:\\JDDevelopment\\CICD-Example\\src\\CICD-Example.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jdoorni\\.nuget\\packages\\microsoft.visualstudio.azure.containers.tools.targets\\1.10.13\\microsoft.visualstudio.azure.containers.tools.targets.1.10.13.nupkg.sha512"
+  ],
+  "logs": []
+}
