@@ -1,6 +1,6 @@
 # CICD-Example (GITHUB Actions, Azure DevOps)
 
-##Introduction
+## Introduction
 .Net 5.0 simple application demonstrating CI/CD build out for both AzDO and GitHub Actions using Helm charts and Azure Kubernetes Service for multiple environments.
 
 ## NOTE:
