@@ -1,8 +1,18 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@model CICD_Example.Models.CalculationModel
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@using (Html.BeginForm("Index", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    <div style="font-weight: bold">@Html.LabelFor(m => m.FirstNumber) @Html.TextBoxFor(x => x.FirstNumber)</div>
+    <br />
+    <div style="font-weight: bold">@Html.LabelFor(m => m.SecondNumber) @Html.TextBoxFor(x => x.SecondNumber)</div>
+    <br />
+    <div style="font-weight: bold">
+        @Html.LabelFor(m => m.calculationMethod) @Html.DropDownListFor(m => m.calculationMethod, new SelectList(Enum.GetValues(typeof(CalculationMethod))))
+    </div>
+    <br />
+    <input type="submit" value="calculate" />
+    <br /><br />
+    <div style="font-weight: bold">
+        <Label>Result:</Label> @Model?.Result
+    </div>
+}

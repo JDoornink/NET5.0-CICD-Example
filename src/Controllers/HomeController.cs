@@ -11,27 +11,31 @@ namespace CICD_Example.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
-        public IActionResult Index()
+        [HttpGet]
+        public ActionResult Index()
         {
             return View();
         }
-
-        public IActionResult Privacy()
+        [HttpPost]
+        public ActionResult Index(CalculationModel model)
         {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            if (model.calculationMethod.ToString() == "add")
+            {
+                model.Result = model.FirstNumber + model.SecondNumber;
+            }
+            if (model.calculationMethod.ToString() == "subtract")
+            {
+                model.Result = model.FirstNumber - model.SecondNumber;
+            }
+            if (model.calculationMethod.ToString() == "multiply")
+            {
+                model.Result = model.FirstNumber * model.SecondNumber;
+            }
+            if (model.calculationMethod.ToString() == "divide")
+            {
+                model.Result = model.FirstNumber / model.SecondNumber;
+            }
+            return View(model);
         }
     }
 }

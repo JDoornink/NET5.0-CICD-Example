@@ -49,7 +49,6 @@ C:\JDDevelopment\CICD-Example\src\bin\Debug\net5.0\ref\CICD-Example.dll
 C:\JDDevelopment\CICD-Example\src\bin\Debug\net5.0\CICD-Example.pdb
 C:\JDDevelopment\CICD-Example\src\bin\Debug\net5.0\CICD-Example.Views.dll
 C:\JDDevelopment\CICD-Example\src\bin\Debug\net5.0\CICD-Example.Views.pdb
-C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.csprojAssemblyReference.cache
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.GeneratedMSBuildEditorConfig.editorconfig
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.AssemblyInfoInputs.cache
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.AssemblyInfo.cs
@@ -78,3 +77,4 @@ C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\ref\CICD-Example.dll
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.pdb
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.genruntimeconfig.cache
 C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.csproj.CopyComplete
+C:\JDDevelopment\CICD-Example\src\obj\Debug\net5.0\CICD-Example.csprojAssemblyReference.cache
