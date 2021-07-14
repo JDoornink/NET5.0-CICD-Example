@@ -5,17 +5,22 @@
 replicaCount: 3
 
 image:
-  repository: doesNotExist.azurecr.io/cicd-example
-  tag: ""
+  repository: doesNotExist.azurecr.io/cicd-example # Does not exist - for demonstration purposes
   pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
   imagePullSecret:
-    registry: doesNotExist.azurecr.io
+    registry: doesNotExist.azurecr.io # Does not exist - for demonstration purposes
     username: ""
     password: ""
 
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: "cicd-example"
+fullnameOverride: "cicd-example"
 
+annotations:
+  environment: Develop
+  releaseName: ""
+  releaseAttempt: ""
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -27,38 +32,25 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext: 
-  runAsNonRoot: true
+podSecurityContext: {}
+  # fsGroup: 2000
 
 securityContext: 
-  runAsNonRoot: true
-  runAsUser: 1000
   # capabilities:
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true
-
+  runAsNonRoot: true
+  runAsUser: 1000
 
 service:
   type: ClusterIP
   port: 80
 
 ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-      - path: /
-        backend:
-          serviceName: chart-example.local
-          servicePort: 80
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  dnsName: "publicIP.cloudapp.azure.com"
+  clusterIssuer: "letsencrypt-prod"
+  resourceGroup: "resourceGroup_Where_publicIP_exists"
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -84,3 +76,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+env:
+  logging:
+    logLevel:
+      default: "Information"
+      microsoft: "Warning"
+      microsoft_hosting_lifetime: "Information"

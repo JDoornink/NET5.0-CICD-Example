@@ -3,7 +3,10 @@ kind: Deployment
 metadata:
   name: {{ include "cicd-example.fullname" . }}
   labels:
-    {{- include "cicd-example.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "cicd-example.name" . }}
+    helm.sh/chart: {{ include "cicd-example.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -13,15 +16,16 @@ spec:
       {{- include "cicd-example.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        app: {{ include "cicd-example.name" . }}
+        env: {{ .Values.annotations.environment }}
+        releaseName: "{{ .Values.annotations.releaseName }} - {{ .Values.annotations.releaseAttempt }}"
       labels:
         {{- include "cicd-example.selectorLabels" . | nindent 8 }}
     spec:
       imagePullSecrets:
-      - name: {{ include "cicd-example.name" . }}-imagepull
+        - name: {{ include "cicd-example.name" . }}-imagepull
       serviceAccountName: {{ include "cicd-example.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -33,27 +37,33 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+              path: /health/alive
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 10
+            env:
+            - name: ALLOWEDHOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: allowed-hosts
+            - name: LOGGING__LOGLEVEL__DEFAULT
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-default
+            - name: LOGGING__LOGLEVEL__MICROSOFT
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-microsoft
+            - name: LOGGING__LOGLEVEL__MICROSOFT__HOSTING__LIFETIME
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-microsoft-hosting-lifetime
