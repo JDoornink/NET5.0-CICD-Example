@@ -16,6 +16,7 @@ spec:
       {{- include "cicd-example.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+
       annotations:
         app: {{ include "cicd-example.name" . }}
         env: {{ .Values.annotations.environment }}
