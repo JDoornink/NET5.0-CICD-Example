@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-data-config
+data:
+  allowed-hosts: {{ quote .Values.env.allowedHosts }}
+  logging-log-level-default: {{ quote .Values.env.logging.logLevel.default }}
+  logging-log-level-microsoft: {{ quote .Values.env.logging.logLevel.microsoft }}
+  logging-log-level-microsoft-hosting-lifetime: {{ quote  .Values.env.logging.logLevel.microsoft_hosting_lifetime  }}

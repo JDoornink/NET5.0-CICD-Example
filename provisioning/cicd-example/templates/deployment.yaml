@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cicd-example.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "cicd-example.name" . }}
+    helm.sh/chart: {{ include "cicd-example.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cicd-example.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        app: {{ include "cicd-example.name" . }}
+        env: {{ .Values.annotations.environment }}
+        releaseName: "{{ .Values.annotations.releaseName }} - {{ .Values.annotations.releaseAttempt }}"
+      labels:
+        {{- include "cicd-example.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        - name: {{ include "cicd-example.name" . }}-imagepull
+      serviceAccountName: {{ include "cicd-example.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 10
+            env:
+            - name: ALLOWEDHOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: allowed-hosts
+            - name: LOGGING__LOGLEVEL__DEFAULT
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-default
+            - name: LOGGING__LOGLEVEL__MICROSOFT
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-microsoft
+            - name: LOGGING__LOGLEVEL__MICROSOFT__HOSTING__LIFETIME
+              valueFrom:
+                configMapKeyRef:
+                  name: cicd-example-config
+                  key: logging-log-level-microsoft-hosting-lifetime
