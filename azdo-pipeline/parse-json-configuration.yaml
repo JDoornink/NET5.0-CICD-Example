@@ -1,0 +1,15 @@
+parameters:
+  - name: configurationPath
+    type: string
+steps:
+  - pwsh: |
+      $variables = Get-Content -Path "${{ parameters.configurationPath }}" -Raw | ConvertFrom-Json -AsHashTable
+
+      foreach ($variable in $variables.GetEnumerator())
+      {
+          $variableName = $variable.Name
+          $variableValue = $variable.Value
+
+          Write-Output "##vso[Task.SetVariable variable=$variableName;]$variableValue"
+      }
+    displayName: "Parse JSON Configuration: ${{ parameters.configurationPath }}"

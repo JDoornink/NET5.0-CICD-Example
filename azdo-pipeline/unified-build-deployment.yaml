@@ -1,0 +1,68 @@
+name: $(Build.BuildId).$(Date:yyyyMMdd)
+
+trigger:
+  - main
+
+stages:
+  - stage: build
+    displayName: Build
+    jobs:
+      - template: build.yaml
+        parameters:
+          publishArtifacts: true
+
+  - stage: Development
+    condition: eq(variables['build.sourceBranchName'], 'main')
+    jobs:
+      - deployment: cicd-example_development
+        displayName: Deploy cicd-example (Development)
+        environment: development
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: deploy.yaml
+                  parameters:
+                    azureSubscription: 'STRING'
+                    commonKeyVaultName: 'STRING'
+                    commonKeyVaultSubscription: 'STRING'
+                    configurationBranch: 'main'
+                    configurationRepository: 'STRING'
+                    environmentTag: 'develop'
+                    helmChartPath:  $(Pipeline.Workspace)/helm/cicd-example
+                    helmChartPathValuesYaml: $(Pipeline.Workspace)/helm/cicd-example/values/values-develop.yaml
+                    imageTag: $(Build.BuildId)
+                    serviceKeyVaultClientID: 'UNIQUE_IDENTIFIER'
+                    serviceKeyVaultName: 'STRING'
+                    serviceKeyVaultSubscription: 'STRING'
+                    serviceKeyVaultVault: 'STRING'
+                    teamKeyVaultName: 'STRING'
+                    teamKeyVaultSubscription: 'STRING'
+
+  - stage: QA
+    condition: eq(variables['build.sourceBranchName'], 'main')
+    jobs:
+      - deployment: cicd-example_development
+        displayName: Deploy cicd-example (QA)
+        environment: development
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: deploy.yaml
+                  parameters:
+                    azureSubscription: 'STRING'
+                    commonKeyVaultName: 'STRING'
+                    commonKeyVaultSubscription: 'STRING'
+                    configurationBranch: 'main'
+                    configurationRepository: 'STRING'
+                    environmentTag: 'develop'
+                    helmChartPath:  $(Pipeline.Workspace)/helm/cicd-example
+                    helmChartPathValuesYaml: $(Pipeline.Workspace)/helm/cicd-example/values/values-qa.yaml
+                    imageTag: $(Build.BuildId)
+                    serviceKeyVaultClientID: 'UNIQUE_IDENTIFIER'
+                    serviceKeyVaultName: 'STRING'
+                    serviceKeyVaultSubscription: 'STRING'
+                    serviceKeyVaultVault: 'STRING'
+                    teamKeyVaultName: 'STRING'
+                    teamKeyVaultSubscription: 'STRING'   

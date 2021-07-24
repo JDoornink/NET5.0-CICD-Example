@@ -1,0 +1,59 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+# Gated Build runs as part of each Pull requests.
+# Pull Requests cannot be completed without a successful gated build.
+
+pool:
+  name: Azure Pipelines
+  vmImage: 'ubuntu-18.04'
+  demands: node.js
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Use .Net Core sdk 5.0.x'
+  inputs:
+    version: 5.0.x
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: |
+      ./src/CICD-Example.csproj
+    vstsFeed: 'Unique String identifier'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build CICD-Example Service'
+  inputs:
+    projects: |
+      ./src/CICD-Example.csproj
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run Unit Tests'
+  inputs:
+    command: test
+    projects: ./src/Tests/Tests.csproj
+    arguments: '--filter Category=Unit'
+
+# - task: DotNetCoreCLI@2
+#   displayName: 'Run Integration Tests'
+#   inputs:
+#     command: test
+#     projects: ./src/Tests/Tests.csproj
+#     arguments: '--filter "TestCategory=Integration"'
+
+# Open source library vulnerability check
+- task: whitesource.whitesource.task-hash-collector.WhiteSource@19
+  displayName: 'WhiteSource '
+  inputs:
+    cwd: src
+    extensions: '.dll .cs'
+    checkPolicies: 'FAIL_ON_BUILD'
+    productRule: productToken
+    productToken: UNIQUE-PRODUCT-TOKEN
+    projectName: cicd-example
+    forceCheckAllDependencies: true
+    forceUpdate: true
+    WhiteSourceService: 'jdoornink-whitesource'

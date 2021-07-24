@@ -1,0 +1,10 @@
+{
+    "azure_subscription": "STRING",
+    "azure-location": "northcentralus",
+    "kubernetes-version": "v1.21.1",
+    "node-count": 3,
+    "node-osdisk-size": 30,
+    "node-vm-size": "Standard_D4s_v3",
+    "aks-cluster-name": "STRING",
+    "aks-cluster-resource-group": "STRING"
+}

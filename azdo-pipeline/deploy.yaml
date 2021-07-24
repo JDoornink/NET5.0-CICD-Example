@@ -1,0 +1,123 @@
+# Deploys the CICD-Example-Service
+
+parameters:
+  - name: azureSubscription
+    type: string
+  - name: commonKeyVaultName
+    type: string
+  - name: commonKeyVaultSubscription
+    type: string
+  - name: configurationBranch
+    type: string
+  - name: configurationRepository
+    type: string
+  - name: environmentTag
+    type: string
+  - name: helmChartPath
+    type: string
+  - name: helmChartPathValuesYaml
+    type: string
+  - name: imageTag
+    type: string
+  - name: serviceKeyVaultClientID
+    type: string
+  - name: serviceKeyVaultSubscription
+    type: string
+  - name: serviceKeyVaultName
+    type: string 
+  - name: serviceKeyVaultVault
+    type: string
+  - name: teamKeyVaultSubscription
+    type: string
+  - name: teamKeyVaultName
+    type: string    
+
+steps:
+  - download: current
+    artifact: helm
+
+  - powershell: |
+      $date=[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId($(Get-Date), 'America/Los_Angeles')
+      Write-Host "##vso[task.setvariable variable=time]$date"
+      Get-TimeZone -ListAvailable
+    displayName: 'Get Time Stamp PST'
+
+  - bash: |
+      git clone \
+        --branch ${{ parameters.configurationBranch }} \
+        https://pipeline:$(System.AccessToken)@dev.azure.com/ViewpointVSO/HFF/_git/${{ parameters.configurationRepository }}
+    displayName: Download Configuration Repo
+  
+  - template: parse-json-configuration.yaml
+    parameters:
+      configurationPath: configuration/aks-configuration-${{ parameters.environmentTag }}.json
+
+  - task: AzureKeyVault@1
+    displayName: 'Download Azure Key Vault Secrets (TEAM)'
+    inputs:
+      azureSubscription:   '${{ parameters.teamKeyVaultSubscription }}'
+      KeyVaultName: '${{ parameters.teamKeyVaultName }}'
+      SecretsFilter: 'Secret1,Secret2'
+  
+  - task: AzureKeyVault@1
+    displayName: 'Download Azure Key Vault Secrets (Common)'
+    inputs:
+      azureSubscription: '${{ parameters.commonKeyVaultSubscription }}'
+      KeyVaultName: '${{ parameters.commonKeyVaultName }}'
+      SecretsFilter: 'Secret3,Secret4,Secret5,Secret6'
+
+  - task: AzureKeyVault@1
+    displayName: 'Download Azure Key Vault Secrets (ServiceSpecific)'
+    inputs:
+      azureSubscription: '${{ parameters.serviceKeyVaultSubscription }}'
+      KeyVaultName: '${{ parameters.serviceKeyVaultName }}'
+      SecretsFilter: 'Secret7,Secret8,Secret9'
+      RunAsPreJob: false
+
+  - task: HelmInstaller@0
+    displayName: 'Install Helm 3.2.1'
+    inputs:
+      helmVersion: 3.2.1
+      checkLatestHelmVersion: false
+
+  - task: AzureCLI@1
+    displayName: 'Install/Upgrade Helm Chart'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptLocation: inlineScript
+      inlineScript: |
+        echo $(aks-cluster-name)
+        echo $(aks-cluster-resource-group)
+        
+        az aks get-credentials --name $(aks-cluster-name) --resource-group $(aks-cluster-resource-group)
+        
+        helm upgrade cicd-example ${{ parameters.helmChartPath }} \
+          --values ${{ parameters.helmChartPathValuesYaml }} \
+          --debug \
+          --install \
+          --wait \
+          --timeout 300s \
+          --set annotations.releaseName="$(Build.BuildId)" \
+          --set annotations.releaseAttempt="$(System.StageAttempt)" \
+          --set env.pipeline.codeBranch="$(Build.SourceBranchName)" \
+          --set env.pipeline.id="$(Build.BuildId)" \
+          --set env.pipeline.deploymentDateTime="$(time)" \
+          --set image.tag="${{ parameters.imageTag }}" \
+          --set image.imagePullSecret.username="$(Secret4)" \
+          --set image.imagePullSecret.password="$(Secret5)" \
+          --set secrets.azureKeyVault.vault="${{ parameters.serviceKeyVaultVault }}" \
+          --set secrets.azureKeyVault.clientId="${{ parameters.serviceKeyVaultClientID }}" \
+          --set secrets.azureKeyVault.clientSecret="$(azure-key-vault-client-secret)" \
+          --set secrets.connectionStrings.authorization="$(Secret6)" \
+          --set secrets.newRelic.licenseKey="$(Secret7)" \
+
+  - task: kasunkodagoda.slack-notification.slack-notification-task.SlackNotification@5
+    displayName: 'CICD-Example Slack Update Notification'
+    inputs:
+      SlackApiToken: '$(Secret8)'
+      MessageAuthor: 'DevOps'
+      Channel: '#slackChannelName'
+      Message: 'CICD-Example - Development'
+      AuthorName: 'CICD-Example DevOps'
+      Title: 'HRIS - CICD-Example'
+      Color: '#439FE0'

@@ -1,0 +1,90 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+# Converted from a previous Classic Pipeline
+
+jobs:
+  - job: cicd_example_build
+    displayName: CICD-Example Service Build
+    pool:
+      name: Azure Pipelines
+      vmImage: 'ubuntu-18.04'
+      demands: node.js
+
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .Net Core sdk 5.0.x'
+      inputs:
+        version: 5.0.x
+
+    - task: NuGetToolInstaller@1
+      displayName: 'Use NuGet 5.8'
+      inputs:
+        versionSpec: 5.8.x
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: restore
+        projects: |
+          ./src/CICD-Example.csproj
+        vstsFeed: 'Unique String identifier'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build CICD-Example Service'
+      inputs:
+        projects: |
+          ./src/CICD-Example.csproj
+
+    # - task: DotNetCoreCLI@2
+    #   displayName: 'Run Unit Tests'
+    #   inputs:
+    #     command: test
+    #     projects: ./src/Tests/Tests.csproj
+    #     arguments: '--filter Category=Unit'
+    #   enabled: false
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Host Project'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: ./src/CICD-Example.csproj
+        arguments: '-c Release -o ./src/publish'
+        zipAfterPublish: false
+        modifyOutputPath: false
+
+    - task: Docker@1
+      displayName: 'Build CICD-Example Service Image'
+      inputs:
+        azureSubscriptionEndpoint: 'Service Connection Name'
+        azureContainerRegistry: DoesNotExist.azurecr.io
+        dockerFile: ./src/Dockerfile
+        imageName: 'DoesNotExist.azurecr.io/cicd-example:$(Build.BuildId)'
+        qualifyImageName: false
+    
+    - task: Docker@1
+      displayName: 'Push service to container repository'
+      inputs:
+        azureSubscriptionEndpoint: 'Service Connection Name'
+        azureContainerRegistry: hffservices.azurecr.io
+        command: 'Push an image'
+        imageName: 'DoesNotExist.azurecr.io/cicd-example:$(Build.BuildId)'
+        qualifyImageName: false
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Helm Chart(s)'
+      inputs:
+        PathtoPublish: provisioning
+        ArtifactName: helm
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+      inputs:
+        Contents: |
+          **/*.zip
+          **/*.ps1
+          .ps1
+          **/*
+        TargetFolder: '$(build.artifactstagingdirectory)'
