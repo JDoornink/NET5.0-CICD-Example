@@ -1,0 +1,42 @@
+#NOTE BELOW IS FOR DEMONSTRATION PURPOSES ONLY
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+#Comment out below since build will not complete due to missing secrets and artifacts
+  #pull_request:
+  #  branches:
+  #    - main
+  
+env:
+  DOCKER_IMAGE_NAME: JDoornink-azure
+  IMAGE_REGISTRY_URL: docker.pkg.github.com
+
+jobs:
+  build_and_publish_artifacts:
+    name: Build and Publish Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.300
+
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
+      - name: 'Build and push image'
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/cicd-example:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/cicd-example:${{ github.sha }}
