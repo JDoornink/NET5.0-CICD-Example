@@ -1,0 +1,68 @@
+#NOTE BELOW IS FOR DEMONSTRATION PURPOSES ONLY
+name: Deploy To QA Environment
+
+on:
+  workflow_dispatch:
+
+env:
+  HELM_VERSION_TO_INSTALL: 3.5.0 # version of HELM to install
+  IMAGE_REPOSITORY: doesNotExist.azurecr.io/cicd-example
+  HELM_CHART_PATH: ./provisioning/helm/cicd-example
+  HELM_CHART_VALUES: ./provisioning/helm/cicd-example/values/values-qa.yaml
+  AKS_CLUSTER_NAME: cicd-example
+  AKS_CLUSTER_RESOURCE_GROUP: cicd-example
+  VERSION: 0.0.1
+
+jobs:
+  Deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Debug Dump
+        uses: hmarr/debug-action@v2
+
+      - name: Get Common Secrets
+        uses: Azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "KV-Name"
+          secrets: 'container-registry-service-principal-pull-only-username, container-registry-service-principal-pull-only-password'
+        id: commomSecrets
+
+      - name: Helm tool installer
+        uses: azure/setup-helm@v1
+        with:
+          version: ${{ env.HELM_VERSION_TO_INSTALL }} # default is latest
+        id: install
+
+      - name: Azure kubernetes set context.
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: "${{ env.AKS_CLUSTER_NAME }}"
+          resource-group: "${{ env.AKS_CLUSTER_RESOURCE_GROUP }}"
+
+      - name: Display Items
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse
+      - run: echo ${{ steps.commonSecrets.outputs.container-registry-service-principal-pull-only-username }}
+
+      #Note: below will work if you are pushing to an AKS Cluster and a Docker secret exists in the cluster
+      - name: Deploy to kubernetes
+        shell: bash
+        run: |
+          helm upgrade cicd-example ${{ env.HELM_CHART_PATH }} --values ${{ env.HELM_CHART_VALUES }} --debug --install --wait --timeout 100s \
+          --set annotations.releaseName=${{ github.run_id }} \
+          --set annotations.releaseAttempt=${{ github.run_number }} \
+          --set image.repository=${{ env.IMAGE_REPOSITORY }} \
+          --set image.tag=${{env.VERSION}}.${{ github.sha }} \
+          --set image.imagePullSecret.username=${{ steps.commonSecrets.outputs.container-registry-service-principal-pull-only-username }} \
+          --set image.imagePullSecret.password=${{ steps.commonSecrets.outputs.container-registry-service-principal-pull-only-password }}
